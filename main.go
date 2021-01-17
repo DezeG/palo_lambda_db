@@ -8,11 +8,10 @@ import (
 	"./structs"
 	"context"
 
-
 	"github.com/aws/aws-sdk-go/aws"
-    "github.com/aws/aws-sdk-go/aws/session"
-    "github.com/aws/aws-sdk-go/service/dynamodb"
-    "github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/dynamodb"
+	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 )
 
 
@@ -32,25 +31,25 @@ func HandleLambdaEvent(ctx context.Context, patient structs.Patient) (events.API
 	resp.Headers["content-type"] = "application/json"
 
 	sess := session.Must(session.NewSessionWithOptions(session.Options{
-	    SharedConfigState: session.SharedConfigEnable,
+		SharedConfigState: session.SharedConfigEnable,
 	}))
 	svc := dynamodb.New(sess)
 
 	av, err := dynamodbattribute.MarshalMap(patient)
 	if err != nil {
-	    fmt.Println(err)
+		fmt.Println(err)
 	}
 
 	tableName := "patients"
 
 	input := &dynamodb.PutItemInput{
-	    Item:      av,
-	    TableName: aws.String(tableName),
+		Item:      av,
+		TableName: aws.String(tableName),
 	}
 
 	_, err = svc.PutItem(input)
 	if err != nil {
-	    fmt.Println(err)
+		fmt.Println(err)
 	}
 
 	return resp, nil

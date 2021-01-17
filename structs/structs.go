@@ -6,5 +6,4 @@ type Patient struct {
 	Illness string `json:"illness"`
 	Pain_level int `json:"painLevel"`
 	Hospital string `json:"hospital"`
-	Str string
 }
