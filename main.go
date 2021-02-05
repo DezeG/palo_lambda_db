@@ -14,26 +14,27 @@ import (
 	"github.com/aws/aws-sdk-go/service/dynamodb/dynamodbattribute"
 )
 
-
-func HandleLambdaEvent(ctx context.Context, patient structs.Patient) (events.APIGatewayProxyResponse, error) {
-
+func get_uuid() string {
 	uuid, err := uuid.NewUUID()
 	if err != nil {
 		fmt.Println(err)
 	}
-	patient.Uuid = uuid.String()
-	fmt.Println(patient)
-	fmt.Println(ctx)
+	return uuid.String()
+}
 
-	resp := events.APIGatewayProxyResponse{Headers: make(map[string]string)}
-	resp.Headers["Access-Control-Allow-Origin"] = "*"
-	resp.Headers["Access-Control-Allow-Headers"] = "Content-Type"
-	resp.Headers["content-type"] = "application/json"
-
+func Initiate_session() *dynamodb.DynamoDB {
 	sess := session.Must(session.NewSessionWithOptions(session.Options{
-		SharedConfigState: session.SharedConfigEnable,
+	SharedConfigState: session.SharedConfigEnable,
 	}))
 	svc := dynamodb.New(sess)
+
+	return svc
+}
+
+func Upload_db(uuid string, patient structs.Patient) error {
+	patient.Uuid = uuid
+
+	svc := Initiate_session()
 
 	av, err := dynamodbattribute.MarshalMap(patient)
 	if err != nil {
@@ -51,6 +52,27 @@ func HandleLambdaEvent(ctx context.Context, patient structs.Patient) (events.API
 	if err != nil {
 		fmt.Println(err)
 	}
+
+	return err
+}
+
+func HandleLambdaEvent(ctx context.Context, patient structs.Patient) (events.APIGatewayProxyResponse, error) {
+	uuid := get_uuid()
+	err := Upload_db(uuid, patient)
+
+	resp := events.APIGatewayProxyResponse{Headers: make(map[string]string)}
+	resp.Headers["Access-Control-Allow-Origin"] = "*"
+	resp.Headers["Access-Control-Allow-Headers"] = "Content-Type"
+	resp.Headers["content-type"] = "application/json"
+	
+	if err != nil {
+		resp.StatusCode = 400
+		resp.Body = "Something went wrong"
+	} else {
+		resp.StatusCode = 200
+	}
+
+
 
 	return resp, nil
 }
